@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://10.0.60.125:5071'
+export const BASE_URL = 'http://192.168.1.153:5071'
 
 export class ApiError extends Error {
   constructor(message, status, fieldErrors = null) {
