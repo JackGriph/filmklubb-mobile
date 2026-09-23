@@ -5,7 +5,10 @@ import { colors } from "../constants/colors";
 
 export default function MovieCard({ movie }) {
   return (
-    <Link href={`/movie/${movie.id}`} asChild>
+    <Link
+      href={{ pathname: "/movie/[id]", params: { id: movie.id, title: movie.title } }}
+      asChild
+    >
       <Pressable style={styles.card}>
         {movie.imageUrl ? (
           <Image source={{ uri: BASE_URL + movie.imageUrl }} style={styles.poster} />
