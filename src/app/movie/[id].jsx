@@ -1,41 +1,24 @@
-import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { fetchMovie } from "../../api/movies";
+import { useMoviesContext } from "../../context/MoviesContext";
+import RatingStars from "../../components/RatingStars";
 import { BASE_URL } from "../../api/client";
 import { colors } from "../../constants/colors";
 
 export default function MovieDetails() {
   const { id } = useLocalSearchParams();
-  const [movie, setMovie] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { movies, loading, error, saveMovie } = useMoviesContext();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchMovie(id)
-      .then((data) => {
-        if (!cancelled) setMovie(data);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  // id från adressen är en sträng, filmens id är ett tal.
+  const movie = movies.find((m) => String(m.id) === id);
 
   if (loading) {
     return (
@@ -45,12 +28,17 @@ export default function MovieDetails() {
     );
   }
 
-  if (error) {
+  if (!movie) {
     return (
       <View style={[styles.screen, styles.center]}>
-        <Text style={styles.error}>{error}</Text>
+        <Text style={styles.error}>{error ?? "Filmen hittades inte."}</Text>
       </View>
     );
+  }
+
+  // PUT ersätter hela filmen, så hela objektet skickas med ändringen ovanpå.
+  function update(changes) {
+    saveMovie(movie.id, { ...movie, ...changes });
   }
 
   return (
@@ -66,11 +54,24 @@ export default function MovieDetails() {
       <Text style={styles.title}>{movie.title}</Text>
       <Text style={styles.meta}>{movie.type}</Text>
 
-      <Text style={styles.status}>
-        {movie.watched
-          ? `Sedd${movie.rating ? ` · ${movie.rating}/5` : ""}`
-          : "Inte sedd än"}
-      </Text>
+      {error && <Text style={styles.error}>{error}</Text>}
+
+      <Pressable
+        style={[styles.toggle, movie.watched && styles.toggleOn]}
+        onPress={() => update({ watched: !movie.watched, rating: null })}
+        accessibilityRole="button"
+      >
+        <Text style={[styles.toggleText, movie.watched && styles.toggleTextOn]}>
+          {movie.watched ? "✓ Sedd" : "Markera som sedd"}
+        </Text>
+      </Pressable>
+
+      {movie.watched && (
+        <View style={styles.rating}>
+          <Text style={styles.label}>Ditt betyg</Text>
+          <RatingStars value={movie.rating} onChange={(rating) => update({ rating })} />
+        </View>
+      )}
 
       {movie.notes && <Text style={styles.notes}>{movie.notes}</Text>}
 
@@ -123,9 +124,33 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 14,
   },
-  status: {
+  toggle: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.muted,
+    borderRadius: 6,
+  },
+  toggleOn: {
+    borderColor: colors.text,
+    backgroundColor: colors.text,
+  },
+  toggleText: {
     color: colors.text,
-    fontSize: 15,
+    fontWeight: "600",
+  },
+  toggleTextOn: {
+    color: colors.bg,
+  },
+  rating: {
+    gap: 4,
+    marginTop: 8,
+  },
+  label: {
+    color: colors.muted,
+    fontSize: 13,
   },
   notes: {
     color: colors.muted,

@@ -1,10 +1,11 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "../constants/colors";
+import { MoviesProvider } from "../context/MoviesContext";
 
 export default function RootLayout() {
   return (
-    <>
+    <MoviesProvider>
       <StatusBar style="light" />
 
       <Stack
@@ -21,6 +22,6 @@ export default function RootLayout() {
           options={({ route }) => ({ title: route.params?.title ?? "" })}
         />
       </Stack>
-    </>
+    </MoviesProvider>
   );
 }

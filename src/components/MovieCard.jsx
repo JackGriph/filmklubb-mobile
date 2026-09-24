@@ -3,73 +3,126 @@ import { Link } from "expo-router";
 import { BASE_URL } from "../api/client";
 import { colors } from "../constants/colors";
 
-export default function MovieCard({ movie }) {
+export default function MovieCard({ movie, style, onToggle }) {
   return (
     <Link
       href={{ pathname: "/movie/[id]", params: { id: movie.id, title: movie.title } }}
       asChild
     >
-      <Pressable style={styles.card}>
-        {movie.imageUrl ? (
-          <Image source={{ uri: BASE_URL + movie.imageUrl }} style={styles.poster} />
-        ) : (
-          <View style={[styles.poster, styles.posterEmpty]}>
-            <Text style={styles.posterEmptyText}>🎬</Text>
-          </View>
-        )}
+      <Pressable style={StyleSheet.flatten([styles.card, style])}>
+        <View style={styles.poster}>
+          {movie.imageUrl ? (
+            <Image source={{ uri: BASE_URL + movie.imageUrl }} style={styles.image} />
+          ) : (
+            <Text style={styles.posterEmpty}>🎬</Text>
+          )}
+
+          <Pressable
+            style={[styles.toggle, movie.watched && styles.toggleOn]}
+            onPress={onToggle}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={movie.watched ? "Markera som osedd" : "Markera som sedd"}
+          >
+            <Text style={[styles.toggleText, movie.watched && styles.toggleTextOn]}>✓</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.body}>
-          <Text style={styles.title}>{movie.title}</Text>
-          <Text style={styles.meta}>{movie.type}</Text>
-          <Text style={styles.status}>
-            {movie.watched
-              ? `Sedd${movie.rating ? ` · ${movie.rating}/5` : ""}`
-              : "Inte sedd än"}
+          <Text style={styles.title} numberOfLines={2}>
+            {movie.title}
           </Text>
+          <Text style={styles.meta}>{movie.type}</Text>
+
+          {movie.watched ? (
+            <Text style={styles.stars}>{stars(movie.rating)}</Text>
+          ) : (
+            <Text style={styles.meta}>Inte sedd än</Text>
+          )}
+
+          {movie.notes && (
+            <Text style={styles.notes} numberOfLines={3}>
+              {movie.notes}
+            </Text>
+          )}
         </View>
       </Pressable>
     </Link>
   );
 }
 
+// Betyg 4 blir ★★★★☆. Sedd utan betyg visas bara som "Sedd".
+function stars(rating) {
+  if (!rating) return "Sedd";
+  return "★".repeat(rating) + "☆".repeat(5 - rating);
+}
+
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    gap: 12,
-    padding: 12,
+    overflow: "hidden",
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 10,
   },
   poster: {
-    width: 64,
-    height: 96,
-    borderRadius: 6,
-    backgroundColor: colors.bg,
-  },
-  posterEmpty: {
+    aspectRatio: 2 / 3,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.bg,
   },
-  posterEmptyText: {
-    fontSize: 28,
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  posterEmpty: {
+    fontSize: 40,
+    opacity: 0.4,
+  },
+  toggle: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.muted,
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
+  },
+  toggleOn: {
+    borderColor: colors.text,
+    backgroundColor: colors.text,
+  },
+  toggleText: {
+    color: colors.text,
+    fontWeight: "700",
+  },
+  toggleTextOn: {
+    color: colors.bg,
   },
   body: {
-    flex: 1,
-    gap: 4,
+    padding: 8,
+    gap: 2,
   },
   title: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
   meta: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: 12,
   },
-  status: {
+  stars: {
+    color: colors.text,
+    fontSize: 14,
+  },
+  notes: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: 12,
+    marginTop: 2,
   },
 });
