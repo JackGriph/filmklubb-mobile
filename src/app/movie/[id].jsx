@@ -8,6 +8,8 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { File } from "expo-file-system";
 import { useMoviesContext } from "../../context/MoviesContext";
 import RatingStars from "../../components/RatingStars";
 import { BASE_URL } from "../../api/client";
@@ -15,7 +17,7 @@ import { colors } from "../../constants/colors";
 
 export default function MovieDetails() {
   const { id } = useLocalSearchParams();
-  const { movies, loading, error, saveMovie } = useMoviesContext();
+  const { movies, loading, error, saveMovie, uploadImage } = useMoviesContext();
 
   // id från adressen är en sträng, filmens id är ett tal.
   const movie = movies.find((m) => String(m.id) === id);
@@ -41,6 +43,17 @@ export default function MovieDetails() {
     saveMovie(movie.id, { ...movie, ...changes });
   }
 
+  async function pickPoster() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+    });
+
+    if (result.canceled) return;
+
+    uploadImage(movie.id, new File(result.assets[0].uri));
+  }
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {movie.imageUrl ? (
@@ -53,6 +66,12 @@ export default function MovieDetails() {
 
       <Text style={styles.title}>{movie.title}</Text>
       <Text style={styles.meta}>{movie.type}</Text>
+
+      <Pressable style={styles.pickButton} onPress={pickPoster}>
+        <Text style={styles.pickButtonText}>
+          {movie.imageUrl ? "Byt affisch" : "Välj affisch"}
+        </Text>
+      </Pressable>
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -122,6 +141,18 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: colors.muted,
+    fontSize: 14,
+  },
+    pickButton: {
+    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.muted,
+    borderRadius: 6,
+  },
+  pickButtonText: {
+    color: colors.text,
     fontSize: 14,
   },
   toggle: {
